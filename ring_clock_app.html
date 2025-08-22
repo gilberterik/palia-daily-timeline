@@ -7,6 +7,7 @@
 <style>
   :root {
     --size: min(90vmin, 720px);
+    --hand-color: #ffb300;
   }
 
   * { box-sizing: border-box; }
@@ -26,12 +27,22 @@
   }
   .hand {
     position: absolute; left: 50%; top: 50%;
-    width: 4px; height: calc(var(--size) * 0.42);
-    background: #00e5ff;
-    border-radius: 4px;
+    width: 3px; height: calc(var(--size) * 0.42);
+    background: var(--hand-color);
+    border-radius: 3px;
     transform-origin: 50% 100%;
     translate: -50% -100%;
-    box-shadow: 0 0 10px rgba(0,229,255,.9);
+    box-shadow: 0 0 10px rgba(255,179,0,.5);
+  }
+  .hand::after {
+    content: "";
+    position: absolute; left: 50%; top: -10px;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 12px solid var(--hand-color);
+    filter: drop-shadow(0 0 6px rgba(255,179,0,.6));
   }
   .cap {
     position: absolute; left: 50%; top: 50%;
