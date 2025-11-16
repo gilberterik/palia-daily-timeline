@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ring Clock — IRL ↔ In‑Game</title>
+    <style>
+      :root {
+        --size: min(90vmin, 720px);
+        --hand-color: #3a094fb9;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        display: grid;
+        place-items: center;
+        min-height: 100svh;
+        background: #0b0e13;
+        color: #f6f7fb;
+      }
+      .wrap {
+        display: grid;
+        gap: 1rem;
+        place-items: center;
+        padding: 1rem;
+      }
+      .face {
+        position: relative;
+        width: var(--size);
+        height: var(--size);
+        background: url("bg/daily-timeline-v0-fisoxv0y8fkf1.webp") no-repeat
+          center/contain;
+        filter: drop-shadow(0 6px 24px rgba(0, 0, 0, 0.5));
+        aspect-ratio: 1/1;
+      }
+      .hand {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 3px;
+        height: calc(var(--size) * 0.42);
+        background: var(--hand-color);
+        border-radius: 3px;
+        transform-origin: 50% 100%;
+        translate: -50% -100%;
+        box-shadow:
+          0 0 0 1px rgba(0, 0, 0, 0.6),
+          0 0 10px rgba(255, 255, 255, 0.5);
+      }
+      .hand::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: -10px;
+        transform: translateX(-50%);
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-bottom: 12px solid var(--hand-color);
+        filter: drop-shadow(0 0 6px rgba(180, 83, 9, 0.6));
+      }
+      .cap {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #fff;
+        translate: -50% -50%;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
+      }
+
+      .panel {
+        display: grid;
+        gap: 0.35rem;
+        text-align: center;
+      }
+      .timebig {
+        font-size: clamp(1.1rem, 2.4vw + 0.6rem, 2rem);
+        font-weight: 700;
+        letter-spacing: 0.5px;
+      }
+      .muted {
+        opacity: 0.8;
+        font-size: 0.95rem;
+      }
+      .row {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .pill {
+        background: #161a22;
+        border: 1px solid #2b3240;
+        border-radius: 999px;
+        padding: 0.5rem 0.9rem;
+        display: inline-flex;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .btn {
+        cursor: pointer;
+        user-select: none;
+      }
+      a.download {
+        color: #b7d2ff;
+        text-underline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="face" aria-label="clock face">
+        <div class="hand" id="hand"></div>
+        <div class="cap"></div>
+      </div>
+
+      <div class="panel">
+        <div class="timebig" id="gameTime">--:-- -- (in‑game)</div>
+        <div class="muted" id="irlTime">--:-- -- (your time)</div>
+        <div class="row">
+          <span class="pill"
+            >Mapping: <strong>60 IRL min → 24 game hrs</strong></span
+          >
+          <span class="pill btn" id="syncTip"
+            >Hand syncs to the top of each IRL hour</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /*
+  Logic:
+  - The hand makes a full rotation every real‑world hour.
+  - Zero angle (top) aligns with the start of the current IRL hour.
+  - In‑game time advances 24 hours per 60 real minutes → 24 minutes per 1 real minute.
+*/
+      const hand = document.getElementById("hand");
+      const gameTimeEl = document.getElementById("gameTime");
+      const irlTimeEl = document.getElementById("irlTime");
+
+      /**
+       * Pads a number with a leading zero if it is less than 10.
+       * @param {number} n The number to pad.
+       * @returns {string} The padded number as a string.
+       */
+      function pad(n) {
+        return n.toString().padStart(2, "0");
+      }
+
+      /**
+       * Formats a 24-hour time into a 12-hour time with AM/PM.
+       * @param {number} h The hour (0-23).
+       * @param {number} m The minute (0-59).
+       * @returns {string} The formatted 12-hour time string.
+       */
+      function fmt12h(h, m) {
+        const ampm = h >= 12 ? "PM" : "AM";
+        let hh = h % 12;
+        if (hh === 0) hh = 12;
+        return `${hh}:${pad(m)} ${ampm}`;
+      }
+
+      /**
+       * Updates the clock face and time displays.
+       * This function is called every 200ms to update the clock hand position,
+       * the in-game time, and the real-world time.
+       */
+      function update() {
+        const now = new Date();
+
+        // Real time display
+        irlTimeEl.textContent =
+          fmt12h(now.getHours(), now.getMinutes()) + " (your time)";
+
+        // Angle: fraction of the current hour (including seconds+ms) × 360
+        const msIntoHour =
+          (now.getMinutes() * 60 + now.getSeconds()) * 1000 +
+          now.getMilliseconds();
+        const angle = (msIntoHour / 3600000) * 360; // 3,600,000 ms per hour
+        hand.style.transform = `rotate(${angle}deg)`;
+
+        // In‑game time: 60 IRL min → 24 game hours.
+        // Map the same fraction of IRL hour into a 24‑hour in‑game day starting at 12:00 AM at the top.
+        const gameMinutesTotal = (msIntoHour / 3600000) * (24 * 60); // minutes in a 24h day
+        let gh = Math.floor(gameMinutesTotal / 60);
+        let gm = Math.floor(gameMinutesTotal % 60);
+        let ap = gh >= 12 ? "PM" : "AM";
+        let gh12 = gh % 12;
+        if (gh12 === 0) gh12 = 12;
+        gameTimeEl.textContent = `${gh12}:${pad(gm)} ${ap} (in‑game)`;
+      }
+
+      update();
+      setInterval(update, 200); // smooth-ish
+    </script>
+  </body>
+</html>
