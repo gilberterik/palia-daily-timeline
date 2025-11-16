@@ -8,13 +8,13 @@ This project was created to provide a visual representation of time that maps a 
 
 ## Setup
 
-To run the application, simply open the `ring_clock_app.html` file in a web browser. No server or special setup is required. For development, you can use a simple local server to avoid any potential issues with `file://` protocols:
+To run the application, simply open the `index.html` file in a web browser. No server or special setup is required. For development, you can use a simple local server to avoid any potential issues with `file://` protocols:
 
 ```bash
 python -m http.server 8000
 ```
 
-Then, navigate to `http://localhost:8000/ring_clock_app.html` in your browser.
+Then, navigate to `http://localhost:8000/index.html` in your browser.
 
 ## Usage
 
@@ -27,8 +27,8 @@ The hand of the clock syncs to the top of each real-world hour. This means that 
 
 ## Project Structure
 
-The project consists of a single HTML file, `ring_clock_app.html`, which contains all the necessary HTML, CSS, and JavaScript. The only external dependency is a background image, which is located in the `bg/` directory.
+The project consists of a single HTML file, `index.html`, which contains all the necessary HTML, CSS, and JavaScript. The only external dependency is a background image, which is located in the `bg/` directory.
 
-*   `ring_clock_app.html`: The main application file.
+*   `index.html`: The main application file.
 *   `bg/`: Contains the background image for the clock face.
 *   `AGENTS.md`: Provides guidelines for agents working on the repository.
